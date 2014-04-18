@@ -54,7 +54,7 @@ namespace roboptim
       class Wrapper
       {
       public:
-	typedef Matrix<double,Dynamic,Dynamic,RowMajor> jacobian_t;
+	typedef Matrix<double,Dynamic,Dynamic,Eigen::RowMajor> jacobian_t;
 	typedef Map<jacobian_t> map_jacobian_t;
 	typedef DifferentiableFunction::result_t result_t;
 	typedef Map<result_t> map_result_t;
@@ -75,7 +75,7 @@ namespace roboptim
 	  // Compute grad_f(x)
 	  if (!grad.empty ())
 	    {
-	      eigen_grad = f_.gradient (eigen_x);
+	      f_.gradient (eigen_grad, eigen_x);
 	    }
 
 	  // Compute f(x)
@@ -87,6 +87,10 @@ namespace roboptim
 		     boost::optional<map_jacobian_t>& jac)
 	{
 	  // Compute the Jacobian of f
+	  // TODO: avoid useless allocation
+	  // FIXME: cannot directly use a RowMajor jacobian_t (conversion
+	  // problem with Eigen::Ref), so we use a temp copy to a
+	  // ColMajor matrix
 	  if (jac) *jac = f_.jacobian (x);
 
 	  // Compute f(x)
@@ -109,10 +113,15 @@ namespace roboptim
 	{
 	  map_argument_t map_x (x, n);
 	  map_result_t map_res (res, m);
+
 	  // Note: gradients are stored contiguously, i.e. dci/dxj is
 	  // stored in grad[i*n+j] where c: R^n -> R^m
 	  boost::optional<map_jacobian_t> map_jac;
-	  if (grad != NULL) map_jac = map_jacobian_t (grad, m, n);
+	  if (grad != NULL)
+	    {
+	      map_jac = map_jacobian_t (grad, m, n);
+	    }
+
 	  (*reinterpret_cast<Wrapper<F>*> (data)).compute (map_x,
 							   map_res,
 							   map_jac);
@@ -126,12 +135,12 @@ namespace roboptim
       /// \brief Visitor used to load the last values of constraints.
       struct constraintLoader : public boost::static_visitor<void>
       {
-        typedef Function::vector_t vector_t;
-        typedef vector_t::Index index_t;
-        typedef Function::argument_t argument_t;
+        typedef Function::vector_ref vector_ref;
+        typedef Function::vector_t::Index index_t;
+        typedef Function::const_argument_ref const_argument_ref;
 
-        constraintLoader (const argument_t& x,
-                          vector_t& constraintValues) :
+        constraintLoader (const_argument_ref& x,
+                          vector_ref constraintValues) :
 	  x_ (x),
 	  constraintValues_ (constraintValues),
 	  i_ (0)
@@ -147,9 +156,9 @@ namespace roboptim
         }
 
       private:
-        const argument_t& x_;
-        vector_t& constraintValues_;
-        vector_t::Index i_;
+        const_argument_ref& x_;
+        vector_ref constraintValues_;
+        index_t i_;
       };
     } // namespace detail
 
@@ -291,8 +300,8 @@ namespace roboptim
 #define LOAD_RESULT_ERROR(STATUS)			\
     case STATUS:					\
     {							\
-    result_ = SolverError (result_map_[STATUS]);	\
-  }							\
+      result_ = SolverError (result_map_[STATUS]);	\
+    }							\
     break;
 
     void SolverNlp::solve () throw ()

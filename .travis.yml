@@ -5,7 +5,7 @@ compiler:
 env:
   global:
   - APT_DEPENDENCIES="doxygen doxygen-latex libltdl-dev libboost-all-dev liblog4cxx10-dev"
-  - GIT_DEPENDENCIES="roboptim/roboptim-core"
+  - GIT_DEPENDENCIES="bchretien/roboptim-core:eigen-ref"
   - DEBSIGN_KEYID=5AE5CD75
   - PPA_URI="roboptim/ppa"
   - NSIQCPPSTYLE_FILEFILTERPATH=cmake/filefilter.txt
@@ -31,6 +31,7 @@ branches:
   only:
   - master
   - debian
+  - eigen-ref
 matrix:
   allow_failures:
   - compiler: clang

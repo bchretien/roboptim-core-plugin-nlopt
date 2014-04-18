@@ -50,10 +50,12 @@ namespace roboptim {
       typedef problem_t::function_t function_t;
       /// \brief Argument type
       typedef function_t::argument_t argument_t;
+      typedef function_t::const_argument_ref const_argument_ref;
       /// \brief type of result
       typedef function_t::result_t result_t;
       /// \brief type of gradient
       typedef DifferentiableFunction::gradient_t gradient_t;
+      typedef DifferentiableFunction::gradient_ref gradient_ref;
       /// \brief Size type
       typedef Function::size_type size_type;
       /// \brief Constraints type
